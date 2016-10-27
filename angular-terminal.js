@@ -1,25 +1,41 @@
-angular
-.module('angular-terminal', [])
-.directive('angularTerminal', ['$rootScope', function ($rootScope) {
-	return {
-		restrict: 'A',
-		link: function (scope, element, attrs) {
-			// define namespace
-			var namespace = 'terminal.' + (attrs.angularTerminal || 'default'),
-				t;
+(function(angular) {
+    var module = angular.module('angular-terminal', []);
 
-			// initialize terminal object
-			t = element.terminal(function(input, terminal) {
-				// user input commands
-				$rootScope.$emit(namespace, input, terminal);
-			}, {
-   				greetings: attrs.greetings || ''
-			});
+    function angularTerminal($rootScope) {
+        return {
+            restrict: 'A',
+            scope: {
+                commands: "=" //Allow commands to be past through
+            },
+            link: function(scope, element, attrs) {
+                console.log(scope.commands);
 
-			// receiving echo commands\
-			$rootScope.$on(namespace + '.echo', function (e, msg) {
-				t.echo(msg);
-			});
-		}
-	};
-}]);
+                // define namespace
+                var namespace = 'terminal.' + (attrs.angularTerminal || 'default');
+                var onInput;
+                if (scope.commands) {
+                    onInput = scope.commands;
+                } else {
+                    onInput = function(input, terminal) {
+                        // user input commands
+                        $rootScope.$emit(namespace, input, terminal);
+                    };
+                }
+                // initialize terminal object
+                var t = element.terminal(onInput,
+                    {
+                        greetings: attrs.greetings || "",
+                        prompt: attrs.prompt || ""
+                    });
+
+                $rootScope.$on(namespace + '.echo',
+                    function(e, msg) {
+                        t.echo(msg);
+                    });
+            }
+        };
+
+    };
+
+    module.directive('angularTerminal', angularTerminal);
+})(angular);
